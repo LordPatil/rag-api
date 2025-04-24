@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document QA System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Document QA System</h1>
+        
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="chat-tab" data-bs-toggle="tab" data-bs-target="#chat" type="button" role="tab" aria-controls="chat" aria-selected="true">Chat</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button" role="tab" aria-controls="upload" aria-selected="false">Upload PDF</button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="myTabContent">
+            <!-- Chat Tab -->
+            <div class="tab-pane fade show active" id="chat" role="tabpanel" aria-labelledby="chat-tab">
+                <div class="chat-container" id="chat-messages">
+                    <div class="message assistant-message">
+                        <div class="message-header">Assistant:</div>
+                        <div>Hello! I'm ready to answer questions about your documents. How can I help you today?</div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <input type="text" id="question-input" class="form-control" placeholder="Ask a question about your documents...">
+                    <button class="btn btn-primary" type="button" id="send-button">Send</button>
+                </div>
+                
+                <div id="loading-indicator" class="mt-2">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Thinking...</p>
+                </div>
+            </div>
+            
+            <!-- Upload Tab -->
+            <div class="tab-pane fade" id="upload" role="tabpanel" aria-labelledby="upload-tab">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Upload PDF Document</h5>
+                        <p class="card-text">Upload a PDF document to add it to the knowledge base. The document will be processed and made available for questions.</p>
+                        
+                        <form id="upload-form" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="pdf-file" class="form-label">Select PDF File</label>
+                                <input class="form-control" type="file" id="pdf-file" accept=".pdf" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Upload</button>
+                        </form>
+                        
+                        <div id="upload-status" class="alert mt-3"></div>
+                        
+                        <div id="upload-loading" class="text-center mt-3" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p>Processing document... This may take a moment.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/main.js"></script>
+</body>
+</html> 

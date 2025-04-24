@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: document-qa
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: EMBEDDING_MODEL
+        value: jinaai/jina-embeddings-v2-base-en
+      - key: LLM_MODEL
+        value: gemini-2.0-flash
+      - key: TEMPERATURE
+        value: "0.0"
+      - key: QDRANT_COLLECTION
+        value: document_qa
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+    disk:
+      name: data
+      mountPath: /opt/render/project/src/uploads
+      sizeGB: 1 
