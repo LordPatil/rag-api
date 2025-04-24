@@ -3,9 +3,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-import torch
-import torch.nn.functional as F
-from transformers import AutoTokenizer, AutoModel
+import requests
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
@@ -33,25 +31,76 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
-# Define the JinaEmbeddings class (same as notebook)
-class JinaEmbeddings(Embeddings):  # Updated to inherit from Embeddings
-    def __init__(self, model_name=os.getenv("EMBEDDING_MODEL", "jinaai/jina-embeddings-v2-base-en")):
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-        self.model = AutoModel.from_pretrained(model_name, trust_remote_code=True)
+# Define the JinaEmbeddings class that uses the API instead of loading the model
+class JinaEmbeddings(Embeddings):
+    def __init__(self, model_name=os.getenv("EMBEDDING_MODEL", "jina-embeddings-v2-base-en"), api_key=None):
+        if api_key is None:
+            api_key = os.getenv("JINA_API_KEY")
+            if api_key is None:
+                raise ValueError("JINA_API_KEY environment variable must be set")
+        
+        # Fix model name if it has the jinaai/ prefix
+        if "/" in model_name:
+            model_name = model_name.split("/")[-1]
+        
+        self.model_name = model_name
+        self.api_key = api_key
+        self.api_url = "https://api.jina.ai/v1/embeddings"
+        self.headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}"
+        }
+        
+        # Set the dimensions based on the model
+        # jina-embeddings-v2-base-en has 768 dimensions
+        self.dimensions = 768
+        logger.info(f"Initialized Jina Embeddings API client for model: {model_name}")
 
     def embed_documents(self, texts):
-        inputs = self.tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
-        with torch.no_grad():
-            outputs = self.model(**inputs)
-            embeddings = F.normalize(outputs.last_hidden_state.mean(dim=1), p=2, dim=1)
-        return embeddings.cpu().numpy().tolist()
+        """Generate embeddings for a list of documents."""
+        try:
+            if not texts:
+                return []
+                
+            # Format input as required by Jina API - each text needs to be wrapped in an object with "text" key
+            input_data = [{"text": text} for text in texts]
+            
+            # Prepare the payload - adding normalized=True for better vector performance
+            payload = {
+                "input": input_data,
+                "model": self.model_name,
+                "normalized": True
+            }
+            
+            # Log the request for debugging
+            logger.info(f"Sending request to Jina AI API: {self.api_url}")
+            logger.info(f"Using model name: {self.model_name}")
+            logger.info(f"Request payload: {payload}")
+            
+            # Make the API request
+            response = requests.post(self.api_url, headers=self.headers, json=payload)
+            
+            # Log the response status for debugging
+            logger.info(f"Response status: {response.status_code}")
+            if response.status_code != 200:
+                logger.error(f"API error: {response.text}")
+                
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            
+            # Extract embeddings from the response
+            result = response.json()
+            embeddings = [item["embedding"] for item in result["data"]]
+            return embeddings
+            
+        except Exception as e:
+            logger.error(f"Error in embed_documents: {str(e)}")
+            raise
 
     def embed_query(self, text):
-        inputs = self.tokenizer(text, return_tensors="pt", truncation=True, padding=True)
-        with torch.no_grad():
-            outputs = self.model(**inputs)
-            embedding = F.normalize(outputs.last_hidden_state.mean(dim=1), p=2, dim=1)
-        return embedding.cpu().numpy()[0].tolist()
+        """Generate an embedding for a single query text."""
+        # For individual queries, we simply use embed_documents and take the first result
+        result = self.embed_documents([text])
+        return result[0] if result else []
 
 # Initialize FastAPI app
 app = FastAPI(title="Document QA API", description="API to answer questions based on document vector database")

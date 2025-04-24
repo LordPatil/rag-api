@@ -1,54 +1,83 @@
-# Document QA API
+# Document QA with Jina AI Embeddings
 
-A FastAPI application that uses PDF documents and LLM (Gemini) to answer questions.
+A FastAPI application that allows users to upload PDF documents, process them using Jina AI embeddings, and answer questions based on the document content.
 
-## Deployment to Render
+## Features
 
-### Prerequisites
+- PDF document upload and processing
+- Semantic search using Jina AI embeddings API
+- Question answering based on document content using Google Gemini
+- Asynchronous background processing
+- Minimized memory footprint
 
-1. A [Render](https://render.com) account
-2. A [Google AI Studio](https://ai.google.dev/) API key for Gemini
-3. A [Qdrant](https://qdrant.tech/) vector database (cloud or self-hosted)
+## Requirements
 
-### Deployment Steps
+- Python 3.8+
+- Jina AI API key (get one at [jina.ai/embeddings](https://jina.ai/embeddings/))
+- Google Gemini API key
+- (Optional) Qdrant Cloud account for vector storage
 
-1. Fork or clone this repository
-2. Log in to your Render account
-3. Click on "New +" and select "Blueprint" from the dropdown menu
-4. Connect your repository
-5. Render will use the `render.yaml` configuration to set up your service
+## Setup
 
-### Environment Variables
+1. Clone this repository
+2. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+3. Create a `.env` file based on `.env.example`:
+   ```
+   cp .env.example .env
+   ```
+4. Edit the `.env` file to add your API keys:
+   ```
+   GEMINI_API_KEY=your_gemini_api_key
+   JINA_API_KEY=your_jina_api_key
+   ```
 
-You need to set the following environment variables in Render:
+## Running the Application
 
-- `GEMINI_API_KEY`: Your Google Gemini API key
-- `QDRANT_URL`: URL of your Qdrant instance (if using cloud)
-- `QDRANT_API_KEY`: API key for your Qdrant instance (if using cloud)
+Start the application with:
 
-If you're using a local Qdrant instance, leave `QDRANT_URL` and `QDRANT_API_KEY` empty, and the application will default to using a local Qdrant database in the `./qdrant_data` directory.
+```
+uvicorn app:app --reload
+```
 
-### Persistent Storage
+Or use:
 
-The application uses a persistent disk mounted at `/opt/render/project/src/uploads` to store the uploaded PDF files.
+```
+python app.py
+```
 
-## Local Development
-
-1. Clone the repository
-2. Create a `.env` file based on `.env.example`
-3. Install dependencies: `pip install -r requirements.txt`
-4. Run the application: `uvicorn app:app --reload`
+The application will be available at http://localhost:8000
 
 ## API Endpoints
 
-- `GET /`: Web UI for document QA
-- `POST /upload-pdf`: Upload a PDF file
-- `GET /process-status/{job_id}`: Check the status of PDF processing
+- `GET /`: Home page with UI
+- `POST /upload-pdf`: Upload a PDF document
+- `GET /process-status/{job_id}`: Check processing status
 - `POST /ask`: Ask a question about the documents
 - `GET /list-documents`: List all uploaded documents
 - `GET /health`: Health check endpoint
 
-## Prerequisites
+## Memory Optimization
 
-- Python 3.8+
-- Chroma vector database already populated at `docs/chroma/`
+This application uses the Jina AI Embeddings API instead of loading embedding models locally, significantly reducing memory usage and making it suitable for deployment on platforms with memory constraints like Render.
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `JINA_API_KEY` | Jina AI API key | - |
+| `GEMINI_API_KEY` | Google Gemini API key | - |
+| `EMBEDDING_MODEL` | Jina embedding model name | `jina-embeddings-v2-base-en` |
+| `LLM_MODEL` | Google Gemini model name | `gemini-2.0-flash` |
+| `TEMPERATURE` | LLM temperature | `0.0` |
+| `QDRANT_URL` | Qdrant cloud URL (optional) | - |
+| `QDRANT_API_KEY` | Qdrant API key (optional) | - |
+| `QDRANT_COLLECTION` | Qdrant collection name | `document_qa` |
+| `HOST` | Server host | `0.0.0.0` |
+| `PORT` | Server port | `8000` |
+
+## License
+
+MIT

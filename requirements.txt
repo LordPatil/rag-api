@@ -2,8 +2,7 @@ fastapi
 uvicorn
 pydantic
 python-multipart
-torch
-transformers
+requests
 langchain
 langchain-core
 langchain-google-genai
